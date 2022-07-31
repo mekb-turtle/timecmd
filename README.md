@@ -5,7 +5,8 @@ Usage: timecmd [hour:minute:command]...\
   hour: 00-23, 24 hour time\
   minute: 00-59\
   command: command to be ran by system(), which uses the default shell\
-  -o --once : run only once and exit, instead of looping
+  -o --once : run only once and exit, instead of looping\
+  -e --exact : run only when exactly on the minute, instead of any time between it and the next one
   
 Example:
 

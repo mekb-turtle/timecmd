@@ -12,6 +12,7 @@ Usage: %s [hour:min:cmd]...\n\
 	min: 00-59\n\
 	cmd: command to be ran by system(), which uses the default shell\n\
 	-o --once : run only once and exit, instead of looping\n\
+	-e --exact : run only when exactly on the minute, instead of any time between it and the next one\n\
 ", argv0);
 	return 2;
 }
@@ -25,17 +26,18 @@ struct tm *get_time() {
 	struct tm *time = localtime(&(timev.tv_sec));
 	return time;
 }
-size_t get_last_time() {
+size_t get_last_time(bool exact) {
 	struct tm *current_tm = get_time();
 	size_t last = current_tm->tm_hour * 60 + current_tm->tm_min; // get minute
 	while (!cmds[last]) {
+		if (exact) return NULL;
 		if (last == 0) last = 24*60; // loop back to yesterday
 		--last; // go back a minute
 	}
 	return last;
 }
-void run_cmd() {
-	size_t last = get_last_time();
+void run_cmd(bool exact) {
+	size_t last = get_last_time(exact);
 	if (!done_once || last != last_time) { // so we don't run the same command again for no reason
 		done_once = 1;
 		if (cmds[last]) {
@@ -53,6 +55,7 @@ int main(int argc, char *argv[]) {
 #define INVALID return usage(argv[0])
 #define NUMERIC(x) (x>='0'&&x<='9')
 	bool once_flag = 0;
+	bool exact_flag = 0;
 	bool flag_done = 0;
 	for (int i = 1; i < argc; ++i) {
 		if (argv[i][0] == '-' && argv[i][1] != '\0' && !flag_done) {
@@ -61,6 +64,10 @@ int main(int argc, char *argv[]) {
 				if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--once") == 0) {
 					if (once_flag) INVALID;
 					once_flag = 1;
+				} else
+				if (strcmp(argv[i], "-e") == 0 || strcmp(argv[i], "--exact") == 0) {
+					if (exact_flag) INVALID;
+					exact_flag = 1;
 				} else
 				INVALID;
 			}
@@ -83,11 +90,11 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	if (!is_one) INVALID; // check at least one exists
-	run_cmd();
+	run_cmd(exact_flag);
 	if (!once_flag) {
 		while (1) {
 			sleep_(5000);
-			run_cmd();
+			run_cmd(exact_flag);
 		}
 	}
 	return 0;
