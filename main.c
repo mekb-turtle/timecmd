@@ -30,7 +30,7 @@ size_t get_last_time(bool after) {
 	struct tm *current_tm = get_time();
 	size_t last = current_tm->tm_hour * 60 + current_tm->tm_min; // get minute
 	while (!cmds[last]) {
-		if (!after) return NULL;
+		if (!after) return SIZE_MAX;
 		if (last == 0) last = 24*60; // loop back to yesterday
 		--last; // go back a minute
 	}
@@ -38,7 +38,7 @@ size_t get_last_time(bool after) {
 }
 void run_cmd(bool after) {
 	size_t last = get_last_time(after);
-	if (after ? last : (!done_once || last != last_time)) { // so we don't run the same command again for no reason
+	if (after ? last != SIZE_MAX : (!done_once || last != last_time)) { // so we don't run the same command again for no reason
 		done_once = 1;
 		if (cmds[last]) {
 			printf("Running %02li:%02li commands: %s\n", last/60, last%60, cmds[last]);
