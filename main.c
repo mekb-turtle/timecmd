@@ -38,7 +38,7 @@ size_t get_last_time(bool after) {
 }
 void run_cmd(bool after) {
 	size_t last = get_last_time(after);
-	if (after ? last != SIZE_MAX : (!done_once || last != last_time)) { // so we don't run the same command again for no reason
+	if ((!done_once || last != last_time) && last != SIZE_MAX) { // so we don't run the same command again for no reason
 		done_once = 1;
 		if (cmds[last]) {
 			printf("Running %02li:%02li commands: %s\n", last/60, last%60, cmds[last]);
