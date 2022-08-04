@@ -5,8 +5,9 @@
 #include <time.h>
 #include <stdint.h>
 #include <stdbool.h>
+#define eprintf(...) fprintf(stderr, __VA_ARGS__)
 int usage(char *argv0) {
-	fprintf(stderr, "\
+	eprintf("\
 Usage: %s [hour:min:cmd]...\n\
 	hour: 00-23, 24 hour time\n\
 	min: 00-59\n\
