@@ -1,24 +1,56 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
 #include <sys/time.h>
 #include <time.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <errno.h>
 #define eprintf(...) fprintf(stderr, __VA_ARGS__)
+#define strerr strerror(errno)
+void exec(bool wait, char *argv[]) {
+	int fd[2]; // create a pipe to use with fork
+	if (pipe(fd) == -1) {
+		eprintf("pipe: %s\n", strerr);
+		return;
+	}
+	pid_t f = fork(); // fork because exec etc commands replace the current process
+	if (f == -1) {
+		eprintf("fork: %s\n", strerr);
+		return;
+	} else if (f == 0) {
+		execvp(argv[0], argv);
+		eprintf("execvp: %s\n", strerr);
+		exit(1);
+	} else {
+		close(fd[1]);
+		dup2(fd[0], STDIN_FILENO);
+		close(fd[0]);
+		if (wait) {
+			if (waitpid(f, NULL, 0) == -1) { // wait for it to close
+				eprintf("waitpid: %s\n", strerr);
+			}
+		}
+	}
+}
+void system_(char *cmd) {
+	exec(0, (char*[]) { "/bin/sh", "-c", cmd, NULL }); // run with shell
+}
 int usage(char *argv0) {
 	eprintf("\
 Usage: %s [hour:min:cmd]...\n\
 	hour: 00-23, 24 hour time\n\
 	min: 00-59\n\
-	cmd: command to be ran by system(), which uses the default shell\n\
+	cmd: command to be ran\n\
 	-o --once : run only once and exit, instead of looping\n\
 	-a --after : allow command to be ran anytime after instead of only on the minute\n\
 ", argv0);
 	return 2;
 }
 char *cmds[24*60]; // list of all commands for each minute
-size_t last_time;   // last one that was executed
+size_t last_time; // last one that was executed
 bool done_once = 0;
 bool is_one = 0;
 struct tm *get_time() {
@@ -43,7 +75,7 @@ void run_cmd(bool after) {
 		done_once = 1;
 		if (cmds[last]) {
 			printf("Running %02li:%02li commands: %s\n", last/60, last%60, cmds[last]);
-			system(cmds[last]);
+			system_(cmds[last]);
 		}	
 	}
 	last_time = last;
