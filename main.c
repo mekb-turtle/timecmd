@@ -74,7 +74,7 @@ void run_cmd(bool after) {
 	if ((!done_once || last != last_time) && last != SIZE_MAX) { // so we don't run the same command again for no reason
 		done_once = 1;
 		if (cmds[last]) {
-			printf("Running %02li:%02li commands: %s\n", last/60, last%60, cmds[last]);
+			eprintf("Running %02li:%02li commands: %s\n", last/60, last%60, cmds[last]);
 			system_(cmds[last]);
 		}	
 	}
